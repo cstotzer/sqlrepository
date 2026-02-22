@@ -37,11 +37,12 @@ jobs:
       - name: Run mypy type checking
         run: uv run mypy src
 
-      - name: Run pip-audit for vulnerability scanning
-        run: |
-          uv pip install pip-audit
-          uv run pip-audit --require-hashes --disable-pip
-
+      - name: Run Trivy vulnerability scanner in fs mode
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          trivy-config: trivy.yaml
   test:
     name: Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest

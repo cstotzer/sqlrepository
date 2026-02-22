@@ -1,0 +1,38 @@
+# Trivy configuration for Offensive Security MCP Servers
+# https://aquasecurity.github.io/trivy/latest/docs/references/configuration/config-file/
+
+# Scan settings
+scan:
+  # Skip directories
+  skip-dirs:
+    - .venv
+
+# Vulnerability settings
+vulnerability:
+  # Ignore unfixed vulnerabilities
+  ignore-unfixed: true
+
+  # Severity levels to report
+  severity:
+    - CRITICAL
+    - HIGH
+
+# Secret scanning
+secret:
+  enabled: true
+
+# Misconfiguration scanning
+misconfiguration:
+  enabled: true
+
+# Image settings (for container scanning)
+image:
+  removed-pkgs: true
+
+# Output settings
+output:
+  - json
+
+# Database settings
+db:
+  skip-update: false
