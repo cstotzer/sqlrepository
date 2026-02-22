@@ -1,0 +1,124 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sqlrepository"
+version = "0.2.0"
+description = "A Python repository pattern implementation for SQLAlchemy and SQLModel, inspired by Spring Data JPA repositories."
+
+authors = [
+    {name = "Christoph Stotzer", email = "christoph.stotzer@gmail.com"}
+]
+requires-python = ">=3.11"
+dependencies = [
+    "sqlalchemy>=2.0.46,<3.0.0",
+]
+readme = "README.md"
+license = {text = "GPL-3.0"}
+license-files = ["LICEN[CS]E*"]
+keywords = ["sqlalchemy", "repository", "pattern", "orm", "database", "crud", "sqlmodel"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Database",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.optional-dependencies]
+sqlmodel = [
+    "sqlmodel>=0.0.34,<0.1.0",
+]
+async = [
+    "greenlet>=3.2.0,<4.0.0",
+]
+
+[dependency-groups]
+sqlmodel = [
+    "sqlmodel>=0.0.34,<0.1.0",
+]
+async = [
+    "greenlet>=3.2.0,<4.0.0",
+]
+dev = [
+    "pytest>=8.2.0,<9.0.0",
+    "pytest-coverage>=0.0,<0.1",
+    "pytest-asyncio>=0.26.0,<0.27.0",
+    "ruff>=0.15.1,<0.16.0",
+    "mypy>=1.19.1,<2.0.0",
+    # Include sqlmodel and async groups
+    "sqlmodel>=0.0.34,<0.1.0",
+    "aiosqlite>=0.20.0,<0.21.0",
+    "greenlet>=3.2.0,<4.0.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sqlrepository"]
+
+
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.lint]
+select = [
+    "ALL",
+]
+extend-select = [
+    "D",  # docstyle
+    "I",  # isort
+]
+preview = true
+ignore = [
+    "COM812",  # missing-trailing-comma
+    "CPY001",  # Missing copyright notice at top of file
+    "D100",    # Missing docstring in public module
+    "D104",    # Missing docstring in public package
+    "D203",    # blank line required before class docstring
+    "D211",    # no-blank-line-before-class
+    "D213",    # multi-line-summary-second-line
+    "EM101",   # raw-string-in-exception
+    "FIX002",  # line-contains-todo
+    "ISC001",  # Conflicts with formatter ruff
+    "PLR0904", # Too many public methods (... > 20)
+    "TD002",   # Missing author in TODO `# TODO(<author_name>): ...`
+    "TD003",   # missing-todo-link
+    "TRY003",  # raise-vanilla-args
+]
+fixable = ["ALL"]
+unfixable = [
+    "D", # Dont fix docstyle from others
+    "I", # we run isort separately
+]
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "S101",    # asserts allowed in tests...
+    "ARG",     # Unused function args -> fixtures nevertheless are functionally relevant...
+    "FBT",     # Don't care about booleans as positional arguments in tests, e.g. via @pytest.mark.parametrize()
+    "PLR2004", # Magic value used in comparison, ...
+    "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "D",       # Don't care about docstrings in tests
+    "DOC",     # Don't care about docstrings in tests
+    "PLR6301", # Don't care about unused self parameter in methods definitions.
+]
+"src/sqlrepository/__init__.py" = [
+    "RUF067",  # Detects the presence of code in __init__.py files.
+]
+
+[tool.pytest]
+pythonpath = ["src"]
+minversion = "8.0"
+addopts = ["-ra", "-q"]
+testpaths = [
+    "tests",
+    "integration",
+]

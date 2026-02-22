@@ -1,0 +1,249 @@
+# This workflow automates the release process.
+# It reads the version from pyproject.toml, creates a git tag, GitHub release, and publishes to PyPI.
+#
+# Usage: Manually trigger this workflow from the Actions tab
+# The workflow will:
+# 1. Extract version from pyproject.toml
+# 2. Create a git tag (v{version})
+# 3. Create a GitHub release
+# 4. Build the package
+# 5. Publish to PyPI
+
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Dry run (skip PyPI publish)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  check-version:
+    name: Check Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+      tag: ${{ steps.get-version.outputs.tag }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Extract version from pyproject.toml
+        id: get-version
+        run: |
+          VERSION=$(uv run python << 'EOF'
+          import sys
+          if sys.version_info >= (3, 11):
+              import tomllib
+          else:
+              import tomli as tomllib
+          
+          with open('pyproject.toml', 'rb') as f:
+              data = tomllib.load(f)
+              print(data['project']['version'])
+          EOF
+          )
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
+          echo "📦 Version: ${VERSION}"
+          echo "🏷️  Tag: v${VERSION}"
+
+      - name: Check if tag already exists
+        run: |
+          if git rev-parse "v${{ steps.get-version.outputs.version }}" >/dev/null 2>&1; then
+            echo "❌ Tag v${{ steps.get-version.outputs.version }} already exists!"
+            exit 1
+          fi
+          echo "✅ Tag v${{ steps.get-version.outputs.version }} is available"
+
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    needs: check-version
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Run ruff lint
+        run: uv run ruff check src tests
+
+      - name: Run ruff format check
+        run: uv run ruff format --check src tests
+
+      - name: Run mypy type checking
+        run: uv run mypy src
+
+      - name: Run tests
+        run: uv run pytest --cov=sqlrepository --cov-report=term-missing
+
+  build:
+    name: Build Package
+    runs-on: ubuntu-latest
+    needs: [check-version, quality-gate]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Build package
+        run: uv build
+
+      - name: Check build artifacts
+        run: |
+          ls -lh dist/
+          echo "📦 Built packages:"
+          for file in dist/*; do
+            echo "  - $(basename $file)"
+          done
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [check-version, build]
+    if: ${{ !inputs.dry-run }}
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Create git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ needs.check-version.outputs.tag }}" -m "Release ${{ needs.check-version.outputs.version }}"
+          git push origin "${{ needs.check-version.outputs.tag }}"
+
+      - name: Generate release notes
+        id: release-notes
+        run: |
+          VERSION="${{ needs.check-version.outputs.version }}"
+          TAG="${{ needs.check-version.outputs.tag }}"
+          
+          # Get the previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          # Create release notes
+          cat > release-notes.md << EOF
+          ## 🚀 Release ${VERSION}
+          
+          ### 📦 Installation
+          
+          \`\`\`bash
+          pip install sqlrepository==${VERSION}
+          # or
+          uv add sqlrepository==${VERSION}
+          \`\`\`
+          
+          ### 📝 Changelog
+          
+          EOF
+          
+          if [ -n "$PREV_TAG" ]; then
+            echo "Changes since ${PREV_TAG}:" >> release-notes.md
+            echo "" >> release-notes.md
+            git log ${PREV_TAG}..HEAD --pretty=format:"* %s (%h)" --no-merges >> release-notes.md
+          else
+            echo "Initial release" >> release-notes.md
+          fi
+          
+          cat release-notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.check-version.outputs.tag }}
+          name: Release ${{ needs.check-version.outputs.version }}
+          body_path: release-notes.md
+          files: dist/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-pypi:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: [check-version, create-release]
+    if: ${{ !inputs.dry-run }}
+    environment:
+      name: pypi
+      url: https://pypi.org/project/sqlrepository/
+    permissions:
+      id-token: write  # Required for trusted publishing
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          print-hash: true
+          verbose: true
+
+  dry-run-summary:
+    name: Dry Run Summary
+    runs-on: ubuntu-latest
+    needs: [check-version, build]
+    if: ${{ inputs.dry-run }}
+    steps:
+      - name: Summary
+        run: |
+          echo "🏃 Dry run completed successfully!"
+          echo ""
+          echo "📦 Version: ${{ needs.check-version.outputs.version }}"
+          echo "🏷️  Tag: ${{ needs.check-version.outputs.tag }}"
+          echo ""
+          echo "✅ Quality checks passed"
+          echo "✅ Package built successfully"
+          echo ""
+          echo "ℹ️  To publish for real, run this workflow without dry-run mode"

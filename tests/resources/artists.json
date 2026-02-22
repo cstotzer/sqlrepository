@@ -1,0 +1,44 @@
+[
+  {
+    "id": 1,
+    "name": "Jimi Hendrix",
+    "genre": "rock",
+    "birth_date": "1942-11-27T00:00:00",
+    "is_active": false
+  },
+  {
+    "id": 2,
+    "name": "Nirvana",
+    "genre": "rock",
+    "birth_date": "1967-02-20T00:00:00",
+    "is_active": false
+  },
+  {
+    "id": 3,
+    "name": "Amy Winehouse",
+    "genre": "jazz",
+    "birth_date": "1983-09-14T00:00:00",
+    "is_active": false
+  },
+  {
+    "id": 4,
+    "name": "The Weeknd",
+    "genre": "pop",
+    "birth_date": "1990-02-16T00:00:00",
+    "is_active": true
+  },
+  {
+    "id": 5,
+    "name": "Bad Omens",
+    "genre": "rock",
+    "birth_date": null,
+    "is_active": true
+  },
+  {
+    "id": 6,
+    "name": "Herbie Hancock",
+    "genre": "jazz",
+    "birth_date": "1940-04-12T00:00:00",
+    "is_active": true
+  }
+]

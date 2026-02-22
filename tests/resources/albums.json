@@ -1,0 +1,86 @@
+[
+  {
+    "id": 1,
+    "title": "Are You Experienced",
+    "artist_id": 1,
+    "release_date": "1967-05-12T00:00:00",
+    "rating": 5
+  },
+  {
+    "id": 2,
+    "title": "Electric Ladyland",
+    "artist_id": 1,
+    "release_date": "1968-10-16T00:00:00",
+    "rating": 5
+  },
+  {
+    "id": 3,
+    "title": "Nevermind",
+    "artist_id": 2,
+    "release_date": "1991-09-24T00:00:00",
+    "rating": 5
+  },
+  {
+    "id": 4,
+    "title": "In Utero",
+    "artist_id": 2,
+    "release_date": "1993-09-13T00:00:00",
+    "rating": 4
+  },
+  {
+    "id": 5,
+    "title": "Back to Black",
+    "artist_id": 3,
+    "release_date": "2006-10-27T00:00:00",
+    "rating": 5
+  },
+  {
+    "id": 6,
+    "title": "Frank",
+    "artist_id": 3,
+    "release_date": "2003-11-18T00:00:00",
+    "rating": 4
+  },
+  {
+    "id": 7,
+    "title": "Beauty Behind the Madness",
+    "artist_id": 4,
+    "release_date": "2015-08-28T00:00:00",
+    "rating": 4
+  },
+  {
+    "id": 8,
+    "title": "After Hours",
+    "artist_id": 4,
+    "release_date": "2020-03-20T00:00:00",
+    "rating": 5
+  },
+  {
+    "id": 9,
+    "title": "Bad Omens",
+    "artist_id": 5,
+    "release_date": "2016-08-19T00:00:00",
+    "rating": 4
+  },
+  {
+    "id": 10,
+    "title": "Finding God Before God Finds Me",
+    "artist_id": 5,
+    "release_date": "2019-10-04T00:00:00",
+    "rating": 4
+  },
+  {
+    "id": 11,
+    "title": "Head Hunters",
+    "artist_id": 6,
+    "release_date": "1973-10-13T00:00:00",
+    "rating": 5
+  },
+  {
+    "id": 12,
+    "title": "Maiden Voyage",
+    "artist_id": 6,
+    "release_date": "1965-03-17T00:00:00",
+    "rating": 5
+  }
+]
