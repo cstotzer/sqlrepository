@@ -1,0 +1,39 @@
+name: Update dependencies
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
+  workflow_dispatch:      # Allow manual trigger
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    name: uv lock --upgrade
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+
+      - name: Set up environment
+        uses: ./.github/actions/setup-env
+
+      - name: Upgrade all dependencies
+        run: uv lock --upgrade
+
+      - name: Open pull request if lock file changed
+        uses: peter-evans/create-pull-request@67ccf781d68cd99a0716f4b0c98abb00e9c3b8a0  # v7.0.6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: chore/update-deps
+          commit-message: "chore: upgrade uv.lock"
+          title: "chore: weekly dependency update"
+          body: |
+            Automated weekly dependency update via `uv lock --upgrade`.
+
+            Review the `uv.lock` diff to see what changed.
+          labels: dependencies
