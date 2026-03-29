@@ -1,0 +1,7 @@
+version: 2
+updates:
+  # Python dependencies are managed via uv — see .github/workflows/update-deps.yml
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
