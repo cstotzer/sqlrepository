@@ -34,8 +34,8 @@ jobs:
       - name: Run ruff format check
         run: uv run ruff format --check src tests
 
-      - name: Run mypy type checking
-        run: uv run mypy src
+      - name: Run pyright type checking
+        run: uv run pyright src
 
       - name: Run Trivy vulnerability scanner in fs mode
         uses: aquasecurity/trivy-action@0.33.1
