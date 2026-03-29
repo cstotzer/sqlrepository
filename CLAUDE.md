@@ -48,10 +48,13 @@ sqlrepository/
 │   ├── copilot-skills/
 │   │   ├── chore.instructions.md
 │   │   └── release.instructions.md
+│   ├── actions/
+│   │   └── setup-env/action.yml     # Composite action: setup-uv + uv sync
+│   ├── dependabot.yml               # Automated github-actions version updates
 │   └── workflows/
 │       ├── ci.yml                   # Quality checks + tests on push/PR
-│       ├── release.yml              # Manual release to PyPI
-│       └── build-wheels.yml
+│       ├── release.yml              # Release on vX.Y.Z tag push
+│       └── update-deps.yml          # Weekly uv lock --upgrade PR
 ├── src/sqlrepository/
 │   ├── __init__.py                  # Exports: Repository, AsyncRepository, EntityType, IdType
 │   ├── core.py                      # Sync repository (SQLAlchemy DeclarativeBase)
@@ -248,12 +251,13 @@ sqlalchemy >= 2.0.46, < 3.0.0
 
 ### Dev Group
 
-Includes everything: pytest, pytest-asyncio, pytest-coverage, ruff, pyright, sqlmodel, aiosqlite, greenlet.
+Includes everything: pytest, pytest-asyncio, pytest-cov, ruff, pyright, sqlmodel, aiosqlite, greenlet, twine, git-cliff.
 
 ### Constraint Notes
 
 - **pytest < 9** is required because `pytest-asyncio 0.26.x` does not support pytest 9 yet.
 - `aiosqlite` is a dev-only dependency (async SQLite driver used in tests).
+- Use `pytest-cov` (not `pytest-coverage` — different package) for the `--cov` flags.
 
 ---
 
@@ -263,19 +267,36 @@ Includes everything: pytest, pytest-asyncio, pytest-coverage, ruff, pyright, sql
 
 | Workflow | Trigger | Steps |
 |----------|---------|-------|
-| `ci.yml` | Push / PR to `main` | ruff lint → ruff format check → pyright → Trivy scan → pytest (Python 3.11–3.14) → Codecov upload |
-| `release.yml` | Manual `workflow_dispatch` | Quality gate → build wheel+sdist → create git tag → GitHub release → publish to PyPI |
-| `build-wheels.yml` | Legacy | Wheel building |
+| `ci.yml` | Push / PR to `main` | ruff lint → ruff format check → pyright → Trivy scan (SARIF) → pytest (Python 3.11–3.14) → Codecov upload |
+| `release.yml` | Push of `v*` tag | Quality gate → build wheel+sdist → twine check → GitHub release (git-cliff notes) → publish to PyPI |
+| `update-deps.yml` | Weekly (Monday 06:00 UTC) | `uv lock --upgrade` → open PR if lock file changed |
 
 ### Release Process
 
-1. Update `version` in `pyproject.toml` (semantic versioning: `MAJOR.MINOR.PATCH`)
-2. Commit: `git commit -m "chore: bump version to X.Y.Z"`
-3. Push to `main`
-4. Go to GitHub Actions → "Release" workflow → "Run workflow"
-5. The workflow handles tagging, GitHub release creation, and PyPI publishing via trusted publishing.
+1. Bump version using uv:
+   ```bash
+   uv version --bump patch   # or minor, major
+   ```
+2. Commit and tag:
+   ```bash
+   git add pyproject.toml uv.lock
+   git commit -m "chore: bump version to X.Y.Z"
+   git tag vX.Y.Z
+   git push origin main vX.Y.Z
+   ```
+3. The `release.yml` workflow triggers automatically on the tag push and handles the GitHub release and PyPI publishing.
+
+> **Dry run**: Trigger `release.yml` manually via `workflow_dispatch` with `dry_run: true` to verify quality gate and build without publishing.
 
 See `.github/CICD.md` for full details.
+
+### Security
+
+- All third-party GitHub Actions are pinned to commit SHAs (with version comments).
+- Trivy scans for CRITICAL/HIGH vulnerabilities and uploads results to the GitHub Security tab as SARIF.
+- Dependabot keeps GitHub Actions SHA pins current (weekly).
+- `update-deps.yml` keeps Python dependencies current via weekly `uv lock --upgrade` PRs.
+- Coverage must meet an 80% threshold (`--cov-fail-under=80`) or CI fails.
 
 ### Commit Prefixes (Conventional Commits)
 
