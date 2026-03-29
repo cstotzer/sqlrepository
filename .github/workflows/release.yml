@@ -115,7 +115,7 @@ jobs:
 
       - name: Generate release notes
         run: |
-          git cliff --latest --output release-notes.md
+          uv run git-cliff --latest --output release-notes.md
           cat release-notes.md
 
       - name: Create GitHub Release
