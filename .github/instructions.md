@@ -413,10 +413,7 @@ See [`.github/CICD.md`](.github/CICD.md) for detailed CI/CD documentation.
 
 ```bash
 # Check types in source
-uv run mypy src/sqlrepository
-
-# Check types in tests (may have issues due to test fixtures)
-uv run mypy tests
+uv run pyright src
 ```
 
 ## Important Notes

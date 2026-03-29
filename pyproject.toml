@@ -49,7 +49,7 @@ dev = [
     "pytest-coverage>=0.0,<0.1",
     "pytest-asyncio>=0.26.0,<0.27.0",
     "ruff>=0.15.1,<0.16.0",
-    "mypy>=1.19.1,<2.0.0",
+    "pyright>=1.1",
     # Include sqlmodel and async groups
     "sqlmodel>=0.0.34,<0.1.0",
     "aiosqlite>=0.20.0,<0.21.0",
@@ -113,6 +113,12 @@ convention = "google"
 "src/sqlrepository/__init__.py" = [
     "RUF067",  # Detects the presence of code in __init__.py files.
 ]
+
+[tool.pyright]
+pythonVersion = "3.11"
+include = ["src"]
+venvPath = "."
+venv = ".venv"
 
 [tool.pytest]
 pythonpath = ["src"]

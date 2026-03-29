@@ -175,12 +175,12 @@ Once trusted publishing is configured, releases are fully automated - no tokens 
 - Check for environment-specific issues
 - Run `uv sync --all-groups` to match CI environment
 
-### Mypy fails in CI
+### Pyright fails in CI
 **Solutions**:
-- Run `uv run mypy src` locally to see errors
+- Run `uv run pyright src` locally to see errors
 - Add type stubs: `uv add --dev types-*`
 - Add `# type: ignore` comments for unavoidable issues
-- Configure mypy in `pyproject.toml` if needed
+- Configure pyright in `pyproject.toml` under `[tool.pyright]`
 
 ### Vulnerability scan fails
 **Solutions**:
