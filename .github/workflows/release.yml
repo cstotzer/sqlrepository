@@ -44,18 +44,7 @@ jobs:
       - name: Extract version from pyproject.toml
         id: get-version
         run: |
-          VERSION=$(uv run python << 'EOF'
-          import sys
-          if sys.version_info >= (3, 11):
-              import tomllib
-          else:
-              import tomli as tomllib
-          
-          with open('pyproject.toml', 'rb') as f:
-              data = tomllib.load(f)
-              print(data['project']['version'])
-          EOF
-          )
+          VERSION=$(uv version --short)
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
           echo "📦 Version: ${VERSION}"
