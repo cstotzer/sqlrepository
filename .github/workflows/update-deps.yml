@@ -16,6 +16,13 @@ jobs:
       contents: write
       pull-requests: write
     steps:
+      - name: Generate app token
+        uses: tibdex/github-app-token@0af3325639c0a60612b2eeaf010f0f88e468e800  # v2.1.0
+        id: app-token
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
@@ -28,7 +35,7 @@ jobs:
       - name: Open pull request if lock file changed
         uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0  # v8.1.0
         with:
-          token: ${{ secrets.UPDATE_DEPS_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
           branch: chore/update-deps
           commit-message: "chore: upgrade uv.lock"
           title: "chore: weekly dependency update"
