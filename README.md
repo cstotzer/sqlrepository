@@ -521,7 +521,7 @@ uv run ruff check --fix src tests
 uv run ruff format src tests
 
 # Type checking
-uv run mypy src/sqlrepository --ignore-missing-imports
+uv run pyright src
 ```
 
 ### Submitting Changes
@@ -551,22 +551,24 @@ uv run mypy src/sqlrepository --ignore-missing-imports
 - Ensure CI checks pass before requesting review
 
 All pull requests trigger automated checks:
-- ✅ Linting (ruff)
-- ✅ Type checking (mypy)
-- ✅ Security scanning (pip-audit)
-- ✅ Tests on Python 3.11 & 3.12
-- ✅ Coverage reporting
+- ✅ Linting and formatting (ruff)
+- ✅ Type checking (pyright)
+- ✅ Security scanning (Trivy — results in GitHub Security tab)
+- ✅ Tests on Python 3.11, 3.12, 3.13, and 3.14
+- ✅ Coverage reporting (80% minimum threshold)
 
 ### Release Process
 
-Releases are fully automated via GitHub Actions. See [CI/CD Documentation](.github/CICD.md) for details.
+Releases are triggered by pushing a version tag. The workflow handles the GitHub release and PyPI publishing automatically.
 
 **Quick release steps**:
-1. Update version in `pyproject.toml`
-2. Commit: `git commit -m "chore: bump version to X.Y.Z"`
-3. Push to GitHub
-4. Go to Actions → Release workflow → Run workflow
-5. Package is automatically built, tagged, and published to PyPI
+```bash
+uv version --bump patch   # or minor, major
+git add pyproject.toml uv.lock
+git commit -m "chore: bump version to X.Y.Z"
+git tag vX.Y.Z
+git push origin main vX.Y.Z
+```
 
 For detailed instructions, see [`.github/CICD.md`](.github/CICD.md).
 
