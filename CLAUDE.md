@@ -33,7 +33,7 @@ uv run ruff check src tests
 uv run ruff format src tests
 
 # Type check
-uv run mypy src
+uv run pyright src
 ```
 
 ---
@@ -146,6 +146,7 @@ Async versions of all methods are `async def` and must be `await`ed.
 - **Line length**: 79 characters, enforced by Ruff
 - **Formatter**: `ruff format`
 - **Linter**: `ruff check` with `ALL` rules enabled (see `pyproject.toml` for specific ignores)
+- **Type checker**: `pyright` (configured via `[tool.pyright]` in `pyproject.toml`, targets Python 3.11, checks `src/`)
 - **Docstring style**: Google style — required on all public methods and classes
 - **Type hints**: Required on all public method signatures
 
@@ -247,7 +248,7 @@ sqlalchemy >= 2.0.46, < 3.0.0
 
 ### Dev Group
 
-Includes everything: pytest, pytest-asyncio, pytest-coverage, ruff, mypy, sqlmodel, aiosqlite, greenlet.
+Includes everything: pytest, pytest-asyncio, pytest-coverage, ruff, pyright, sqlmodel, aiosqlite, greenlet.
 
 ### Constraint Notes
 
@@ -262,7 +263,7 @@ Includes everything: pytest, pytest-asyncio, pytest-coverage, ruff, mypy, sqlmod
 
 | Workflow | Trigger | Steps |
 |----------|---------|-------|
-| `ci.yml` | Push / PR to `main` | ruff lint → ruff format check → mypy → Trivy scan → pytest (Python 3.11–3.14) → Codecov upload |
+| `ci.yml` | Push / PR to `main` | ruff lint → ruff format check → pyright → Trivy scan → pytest (Python 3.11–3.14) → Codecov upload |
 | `release.yml` | Manual `workflow_dispatch` | Quality gate → build wheel+sdist → create git tag → GitHub release → publish to PyPI |
 | `build-wheels.yml` | Legacy | Wheel building |
 
@@ -303,7 +304,7 @@ See `.github/CICD.md` for full details.
 1. Create a branch: `git checkout -b feature/my-feature`
 2. Implement with tests (TDD recommended)
 3. Update `README.md` with usage examples
-4. Run: `uv run pytest && uv run ruff check src tests && uv run ruff format src tests && uv run mypy src`
+4. Run: `uv run pytest && uv run ruff check src tests && uv run ruff format src tests && uv run pyright src`
 5. Commit with conventional commit message
 
 ### Checking Security
