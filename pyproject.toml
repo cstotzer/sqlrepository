@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sqlrepository"
-version = "0.2.0"
+version = "0.2.1"
 description = "A Python repository pattern implementation for SQLAlchemy and SQLModel, inspired by Spring Data JPA repositories."
 
 authors = [
