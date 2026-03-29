@@ -8,6 +8,9 @@ on:
 permissions:
   contents: read
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # Remove once tibdex/github-app-token ships Node.js 24 support
+
 jobs:
   update:
     name: uv lock --upgrade
