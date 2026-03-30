@@ -6,8 +6,6 @@ A Python repository pattern implementation for SQLAlchemy and SQLModel, inspired
 
 `sqlrepository` provides a clean, type-safe repository pattern for database operations, eliminating boilerplate CRUD code and promoting consistent data access patterns across your application. Whether you're using SQLAlchemy's `DeclarativeBase` or SQLModel's enhanced models with validation, this library offers a unified interface for your data access layer.
 
-**Inspired by Spring Data JPA**, this package brings the elegant repository pattern from the Java ecosystem to Python, adapted for SQLAlchemy's powerful ORM capabilities.
-
 ### Key Features
 
 - 🎯 **Type-safe** - Full type hints and generic support for IDE autocomplete
@@ -21,574 +19,309 @@ A Python repository pattern implementation for SQLAlchemy and SQLModel, inspired
 ## Installation
 
 ```bash
-# Basic installation with SQLAlchemy support
-pip install sqlrepository
-
-# Or with uv
-uv add sqlrepository
-
-# For SQLModel support (optional)
-pip install 'sqlrepository[sqlmodel]'
-# or with uv
-uv add 'sqlrepository[sqlmodel]'
-
-# For async support (SQLAlchemy async)
-pip install 'sqlrepository[async]'
-# or with uv
-uv add 'sqlrepository[async]'
-
-# For full async + SQLModel support
-pip install 'sqlrepository[async,sqlmodel]'
-# or with uv
-uv add 'sqlrepository[async,sqlmodel]'
+uv add sqlrepository                       # SQLAlchemy only
+uv add 'sqlrepository[sqlmodel]'           # + SQLModel support
+uv add 'sqlrepository[async]'             # + async support
+uv add 'sqlrepository[async,sqlmodel]'    # everything
 ```
+
+`pip install` works the same way for non-uv projects.
 
 ## Usage
 
-### Creating Repositories with SQLAlchemy
+### SQLAlchemy
 
-Define your model using SQLAlchemy's `DeclarativeBase`:
+Define your models using SQLAlchemy's `DeclarativeBase` and create a repository by subclassing `Repository[ModelType, IdType]`:
 
 ```python
-from sqlalchemy import Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlrepository import Base, Repository
+from enum import StrEnum
+from sqlalchemy import Boolean, Integer, NVARCHAR
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlrepository import Repository
 
 
-class User(Base):
-    __tablename__ = "users"
-    
+class Base(DeclarativeBase): ...
+
+
+class Genre(StrEnum):
+    POP = "pop"
+    ROCK = "rock"
+    JAZZ = "jazz"
+    OTHER = "other"
+
+
+class Artist(Base):
+    __tablename__ = "artists"
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    username: Mapped[str] = mapped_column(String(50), unique=True)
-    email: Mapped[str] = mapped_column(String(100))
-    age: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    name: Mapped[str | None] = mapped_column(NVARCHAR(120))
+    genre: Mapped[Genre] = mapped_column(default=Genre.OTHER)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
-class UserRepository(Repository[User, int]):
-    """Repository for User model."""
+class ArtistRepository(Repository[Artist, int]):
     pass
 ```
 
-Use the repository in your application:
+Then use it with a session:
 
 ```python
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-# Setup
-engine = create_engine("sqlite:///app.db")
+engine = create_engine("sqlite:///music.db")
 Base.metadata.create_all(engine)
 
 with Session(engine) as session:
-    user_repo = UserRepository(session)
-    
+    repo = ArtistRepository(session)
+
     # Create
-    new_user = User(username="john_doe", email="john@example.com", age=30)
-    user_repo.save(new_user)
+    artist = Artist(name="Jimi Hendrix", genre=Genre.ROCK, is_active=False)
+    repo.save(artist)
     session.commit()
-    
+
     # Read
-    user = user_repo.find_by_id(1)
-    all_users = user_repo.find_all()
-    
+    found = repo.find_by_id(artist.id)
+    all_artists = repo.find_all()
+
     # Update
-    user.email = "newemail@example.com"
-    user_repo.save(user)
+    found.is_active = True
+    repo.save(found)
     session.commit()
-    
+
     # Delete
-    user_repo.delete_by_id(1)
+    repo.delete_by_id(artist.id)
     session.commit()
-    
-    # Count
-    total = user_repo.count()
 ```
 
-### Creating Repositories with SQLModel
+### SQLModel
 
-SQLModel combines SQLAlchemy's power with Pydantic's validation:
+SQLModel combines SQLAlchemy's power with Pydantic's validation. Import `Repository` from `sqlrepository.sqlmodel`. The `Genre` enum is the same as in the SQLAlchemy example.
 
 ```python
 from sqlmodel import Field, SQLModel
-from sqlrepository import SQLModelRepository
+from sqlrepository.sqlmodel import Repository
 
 
 class Artist(SQLModel, table=True):
-    """SQLModel artist with built-in validation."""
-    __tablename__ = "artists"
-    
-    ArtistId: int | None = Field(default=None, primary_key=True)
-    Name: str = Field(index=True, min_length=1, max_length=120)
+    id: int | None = Field(default=None, primary_key=True)
+    name: str | None = Field(default=None, max_length=120)
+    genre: Genre | None = Field(default=Genre.OTHER)
+    is_active: bool = Field(default=True)
 
 
-class ArtistRepository(SQLModelRepository[Artist, int]):
-    """Repository for Artist model."""
+class ArtistRepository(Repository[Artist, int]):
     pass
 ```
 
-Use with SQLModel:
+Then use it with a session:
 
 ```python
 from sqlmodel import create_engine, Session, SQLModel
 
-# Setup
 engine = create_engine("sqlite:///music.db")
 SQLModel.metadata.create_all(engine)
 
 with Session(engine) as session:
-    artist_repo = ArtistRepository(session)
-    
-    # Create with validation
-    artist = Artist(Name="AC/DC")
-    artist_repo.save(artist)
-    session.commit()
-    
-    # Bulk operations
+    repo = ArtistRepository(session)
+
+    # Bulk create
     artists = [
-        Artist(Name="Led Zeppelin"),
-        Artist(Name="Pink Floyd"),
+        Artist(name="Jimi Hendrix", genre=Genre.ROCK),
+        Artist(name="Amy Winehouse", genre=Genre.JAZZ),
+        Artist(name="The Weeknd", genre=Genre.POP, is_active=True),
     ]
-    artist_repo.save_all(artists)
+    repo.save_all(artists)
     session.commit()
+
+    print(repo.count())           # 3
+    print(repo.exists_by_id(1))   # True
 ```
 
-### Using Async Repositories
+### Async Repositories
 
-For asynchronous database operations, use `AsyncRepository` with SQLAlchemy's async capabilities:
+For async applications, use `AsyncRepository` with SQLAlchemy's `AsyncSession`. Always set `expire_on_commit=False` on the session to avoid lazy-loading errors after commit.
+
+#### SQLAlchemy
 
 ```python
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlrepository import Base
-from sqlrepository.async_repository import AsyncRepository
-
-class Artist(Base):
-    __tablename__ = "artists"
-    
-    ArtistId: Mapped[int] = mapped_column(Integer, primary_key=True)
-    Name: Mapped[str] = mapped_column(String(120))
+from sqlrepository import AsyncRepository
 
 
 class ArtistRepository(AsyncRepository[Artist, int]):
     pass
 
 
-# Usage
 async def main():
     engine = create_async_engine("sqlite+aiosqlite:///music.db")
-    
-    async with AsyncSession(engine) as session:
-        artist_repo = ArtistRepository(session)
-        
-        # All repository methods are async
-        artist = Artist(Name="AC/DC")
-        await artist_repo.save(artist)
-        await session.commit()
-        
-        # Find operations
-        found = await artist_repo.find_by_id(1)
-        all_artists = await artist_repo.find_all()
-        count = await artist_repo.count()
-        
-        # Delete operations
-        await artist_repo.delete_by_id(1)
-        await session.commit()
-```
 
-SQLModel also supports async operations:
-
-```python
-from sqlmodel import Field, SQLModel
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlrepository.async_repository import AsyncSQLModelRepository
-
-class Artist(SQLModel, table=True):
-    __tablename__ = "artists"
-    
-    ArtistId: int | None = Field(default=None, primary_key=True)
-    Name: str = Field(max_length=120)
-
-
-class ArtistRepository(AsyncSQLModelRepository[Artist, int]):
-    pass
-
-
-async def main():
-    engine = create_async_engine("sqlite+aiosqlite:///music.db")
-    
     async with AsyncSession(engine, expire_on_commit=False) as session:
-        artist_repo = ArtistRepository(session)
-        
-        artist = Artist(Name="Led Zeppelin")
-        await artist_repo.save(artist)
+        repo = ArtistRepository(session)
+
+        artist = Artist(name="Herbie Hancock", genre=Genre.JAZZ, is_active=True)
+        await repo.save(artist)
+        await session.commit()
+
+        all_artists = await repo.find_all()
+        count = await repo.count()
+        await repo.delete_by_id(artist.id)
         await session.commit()
 ```
 
-**Note**: When using async sessions, set `expire_on_commit=False` to avoid lazy-loading issues after commit.
+#### SQLModel
 
-## Transaction Management
-
-Following the Spring Data JPA pattern, repositories do **not** expose transaction control methods (`commit()`, `flush()`, `rollback()`). Transaction boundaries should be managed by the caller (e.g., service layer or application code).
-
-### Why This Pattern?
-
-This separation of concerns provides several benefits:
-- **Clear Responsibility**: Repositories handle data access, not transaction boundaries
-- **Flexibility**: The caller controls when to commit or rollback
-- **Composability**: Multiple repository calls can participate in a single transaction
-- **Testability**: Easier to test with controlled transaction boundaries
-
-### Synchronous Transaction Management
-
-#### Using Context Managers (Recommended)
+The pattern is identical — just import `AsyncRepository` from `sqlrepository.sqlmodel` instead:
 
 ```python
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
-from sqlrepository import Repository
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlrepository.sqlmodel import AsyncRepository
 
-engine = create_engine("sqlite:///chinook.db")
 
-# Context manager handles commit/rollback automatically
+class ArtistRepository(AsyncRepository[Artist, int]):
+    pass
+```
+
+### Transaction Management
+
+Repositories never commit, rollback, or expose transaction control — that responsibility belongs to the caller. The recommended pattern is to use the session as a context manager, which handles commit and rollback automatically:
+
+```python
+# Sync — multiple repositories in one transaction
 with Session(engine) as session:
-    repo = Repository[Artist, int](Artist, session)
-    
-    artist = Artist(Name="Pink Floyd")
-    repo.save(artist)
-    
-    # Commit happens automatically when exiting the context
-    # Rollback happens automatically on exception
+    artist_repo = ArtistRepository(session)
+    album_repo = AlbumRepository(session)
 
-# For multiple operations in one transaction:
-with Session(engine) as session:
-    artist_repo = Repository[Artist, int](Artist, session)
-    album_repo = Repository[Album, int](Album, session)
-    
-    artist = Artist(Name="The Beatles")
+    artist = Artist(name="Nirvana", genre=Genre.ROCK)
     artist_repo.save(artist)
-    
-    album = Album(Title="Abbey Road", ArtistId=artist.ArtistId)
+
+    album = Album(title="Nevermind", artist_id=artist.id)
     album_repo.save(album)
-    
-    # Both operations committed together
+
+    session.commit()  # both committed together, or neither on exception
 ```
 
-#### Manual Transaction Control
-
 ```python
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
-from sqlrepository import Repository
-
-engine = create_engine("sqlite:///chinook.db")
-
-session = Session(engine)
-try:
-    repo = Repository[Artist, int](Artist, session)
-    
-    artist = Artist(Name="Queen")
-    repo.save(artist)
-    
-    # Explicitly commit
-    session.commit()
-except Exception as e:
-    # Explicitly rollback on error
-    session.rollback()
-    raise
-finally:
-    session.close()
-```
-
-### Asynchronous Transaction Management
-
-#### Using Async Context Managers (Recommended)
-
-```python
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlrepository import AsyncRepository
-
-engine = create_async_engine("sqlite+aiosqlite:///:memory:")
-
-# Context manager handles commit/rollback automatically
+# Async — same pattern with await
 async with AsyncSession(engine, expire_on_commit=False) as session:
-    repo = AsyncRepository[AsyncArtist, int](AsyncArtist, session)
-    
-    artist = AsyncArtist(Name="Radiohead")
-    await repo.save(artist)
-    
-    # Commit happens automatically when exiting the context
-    # Rollback happens automatically on exception
+    artist_repo = ArtistRepository(session)
+    album_repo = AlbumRepository(session)
 
-# For multiple operations in one transaction:
-async with AsyncSession(engine, expire_on_commit=False) as session:
-    artist_repo = AsyncRepository[AsyncArtist, int](AsyncArtist, session)
-    album_repo = AsyncRepository[AsyncAlbum, int](AsyncAlbum, session)
-    
-    artist = AsyncArtist(Name="Nirvana")
+    artist = Artist(name="Amy Winehouse", genre=Genre.JAZZ)
     await artist_repo.save(artist)
-    
-    album = AsyncAlbum(Title="Nevermind", ArtistId=artist.ArtistId)
+
+    album = Album(title="Back to Black", artist_id=artist.id)
     await album_repo.save(album)
-    
-    # Both operations committed together
+
+    await session.commit()  # both committed together, or neither on exception
 ```
 
-#### Manual Async Transaction Control
+## Available Methods
 
-```python
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlrepository import AsyncRepository
+All repository classes expose the same interface out of the box. Async variants are `async def` and must be `await`ed.
 
-engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+| Method | Returns | Notes |
+|---|---|---|
+| `save(entity)` | `EntityType` | Insert or merge; flushes to populate generated IDs |
+| `save_all(entities)` | `Sequence[EntityType]` | Save a collection |
+| `find_by_id(id)` | `EntityType \| None` | |
+| `find_all(order_by=None)` | `Sequence[EntityType]` | Optionally pass a column expression to order results |
+| `find_all_by_id(ids)` | `Sequence[EntityType]` | Efficient batch lookup for a known set of IDs |
+| `exists_by_id(id)` | `bool` | |
+| `count()` | `int` | |
+| `delete(entity)` | `None` | |
+| `delete_by_id(id)` | `None` | |
+| `delete_all(entities=None)` | `None` | Pass `None` to delete **all rows** in the table |
+| `delete_all_by_id(ids)` | `None` | |
 
-session = AsyncSession(engine, expire_on_commit=False)
-try:
-    repo = AsyncRepository[AsyncArtist, int](AsyncArtist, session)
-    
-    artist = AsyncArtist(Name="Metallica")
-    await repo.save(artist)
-    
-    # Explicitly commit
-    await session.commit()
-except Exception as e:
-    # Explicitly rollback on error
-    await session.rollback()
-    raise
-finally:
-    await session.close()
-```
+## Adding Custom Query Methods
 
-### Best Practices
-
-1. **Use Context Managers**: They automatically handle commit/rollback and cleanup
-2. **One Transaction per Use Case**: Group related operations in a single transaction
-3. **Handle Errors Gracefully**: Always rollback on exceptions
-4. **Set expire_on_commit=False**: For async sessions to avoid lazy-loading issues
-5. **Service Layer Pattern**: Let services manage transactions, repositories manage data
-
-### Adding Custom Query Methods
-
-Extend the repository with your own query methods:
+Extend the repository class with your own query methods using `self.session`:
 
 ```python
 from sqlalchemy import select
 from sqlrepository import Repository
 
 
-class UserRepository(Repository[User, int]):
-    def find_by_username(self, username: str) -> User | None:
-        """Find user by username."""
-        statement = select(User).where(User.username == username)
-        return self.session.scalar(statement)
-    
-    def find_by_age_range(self, min_age: int, max_age: int) -> list[User]:
-        """Find users within age range."""
-        statement = (
-            select(User)
-            .where(User.age >= min_age, User.age <= max_age)
-            .order_by(User.age)
-        )
-        return list(self.session.scalars(statement))
-    
-    def find_active_users(self) -> list[User]:
-        """Custom business logic query."""
-        statement = (
-            select(User)
-            .where(User.is_active == True)
-            .order_by(User.username)
-        )
-        return list(self.session.scalars(statement))
+class ArtistRepository(Repository[Artist, int]):
+    def find_by_genre(self, genre: Genre) -> list[Artist]:
+        """Find all artists in a given genre."""
+        stmt = select(Artist).where(Artist.genre == genre)
+        return list(self.session.scalars(stmt))
+
+    def find_active(self) -> list[Artist]:
+        """Find all active artists."""
+        stmt = select(Artist).where(Artist.is_active.is_(True))
+        return list(self.session.scalars(stmt))
 ```
 
-For async repositories, use the same pattern with async methods:
-
-```python
-from sqlalchemy import select
-from sqlrepository.async_repository import AsyncRepository
-
-
-class AsyncUserRepository(AsyncRepository[User, int]):
-    async def find_by_username(self, username: str) -> User | None:
-        """Find user by username."""
-        statement = select(User).where(User.username == username)
-        result = await self.session.scalar(statement)
-        return result
-    
-    async def find_by_age_range(self, min_age: int, max_age: int) -> list[User]:
-        """Find users within age range."""
-        statement = (
-            select(User)
-            .where(User.age >= min_age, User.age <= max_age)
-            .order_by(User.age)
-        )
-        result = await self.session.scalars(statement)
-        return list(result)
-    
-    async def find_active_users(self) -> list[User]:
-        """Custom business logic query."""
-        statement = (
-            select(User)
-            .where(User.is_active == True)
-            .order_by(User.username)
-        )
-        result = await self.session.scalars(statement)
-        return list(result)
-
-
-# Usage
-async def main():
-    async with AsyncSession(engine) as session:
-        user_repo = AsyncUserRepository(session)
-        
-        # Use custom async methods
-        user = await user_repo.find_by_username("john_doe")
-        active_users = await user_repo.find_active_users()
-        young_users = await user_repo.find_by_age_range(18, 30)
-```
-```
-
-### Available Repository Methods
-
-All repositories provide these methods out of the box:
-
-**Create/Update:**
-- `save(entity)` - Save or update a single entity
-- `save_all(entities)` - Save or update multiple entities
-
-**Read:**
-- `find_by_id(id)` - Find entity by primary key
-- `find_all()` - Get all entities
-- `find_all_by_id(ids)` - Find multiple entities by IDs
-- `exists_by_id(id)` - Check if entity exists
-- `count()` - Count total entities
-
-**Delete:**
-- `delete(entity)` - Delete a single entity
-- `delete_by_id(id)` - Delete by primary key
-- `delete_all()` - Delete all entities
-- `delete_all_by_id(ids)` - Delete multiple by IDs
-
-**Transaction Control:**
-- `flush()` - Flush pending changes
-- `commit()` - Commit transaction
-- `rollback()` - Rollback transaction
+For async repositories, use the same pattern with `async def` and `await self.session.scalars(...)`.
 
 ## Contributing
 
-We welcome contributions! Here's how to get started:
-
-### Setting Up Development Environment
+### Setting Up
 
 ```bash
-# Clone the repository
 git clone https://github.com/cstotzer/sqlrepository.git
 cd sqlrepository
-
-# Install dependencies with uv
 uv sync --all-groups
-
-# The virtual environment is automatically managed by uv
 ```
 
 ### Running Tests
 
 ```bash
-# Run all tests
+# All tests
 uv run pytest
 
-# Run with coverage
+# With coverage
 uv run pytest --cov=sqlrepository --cov-report=term-missing
 
-# Run specific test file
-uv run pytest tests/test_repository.py -v
-
-# Run specific test
-uv run pytest tests/test_repository.py::test_save -v
-
-# Run async tests only
-uv run pytest tests/test_async_repository.py tests/test_async_sqlmodel_repository.py -v
+# One suite only
+uv run pytest tests/sqlalchemy -v
+uv run pytest tests/sqlmodel -v
 ```
 
-### Code Quality Checks
+### Code Quality
 
 ```bash
-# Run linter
-uv run ruff check src tests
-
-# Auto-fix linting issues
-uv run ruff check --fix src tests
-
-# Format code
-uv run ruff format src tests
-
-# Type checking
-uv run pyright src
+uv run ruff check src tests       # lint
+uv run ruff format src tests      # format
+uv run pyright src                # type check
 ```
 
 ### Submitting Changes
 
-1. **Fork the repository** on GitHub
-2. **Create a feature branch** from `main`:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-3. **Make your changes** with clear, descriptive commits
-4. **Ensure all tests pass** and code is properly formatted
-5. **Push to your fork**:
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-6. **Open a Pull Request** on GitHub with:
-   - Clear description of changes
-   - Reference to any related issues
-   - Test coverage for new features
-
-### Pull Request Guidelines
-
-- Follow existing code style and conventions
-- Add tests for new functionality
-- Update documentation if needed
-- Keep changes focused and atomic
-- Ensure CI checks pass before requesting review
-
-All pull requests trigger automated checks:
-- ✅ Linting and formatting (ruff)
-- ✅ Type checking (pyright)
-- ✅ Security scanning (Trivy — results in GitHub Security tab)
-- ✅ Tests on Python 3.11, 3.12, 3.13, and 3.14
-- ✅ Coverage reporting (80% minimum threshold)
+1. Fork the repository and create a branch from `main`
+2. Make your changes with clear, conventional commit messages
+3. Ensure all tests pass and code is properly formatted
+4. Open a Pull Request — CI will run lint, type checks, security scan, and tests on Python 3.11–3.14
 
 ### Release Process
 
-Releases are triggered by pushing a version tag. The workflow handles the GitHub release and PyPI publishing automatically.
+Bump the version locally, then push a tag — the release workflow triggers automatically:
 
-**Quick release steps**:
 ```bash
-uv version --bump patch   # or minor, major
+uv version --bump patch   # or: minor, major
 git add pyproject.toml uv.lock
 git commit -m "chore: bump version to X.Y.Z"
 git tag vX.Y.Z
 git push origin main vX.Y.Z
 ```
 
-For detailed instructions, see [`.github/CICD.md`](.github/CICD.md).
+The workflow runs the quality gate, builds the package, publishes a GitHub release with generated release notes, and uploads to PyPI — all without further intervention.
+
+> **Dry run**: trigger `release.yml` manually via `workflow_dispatch` with `dry_run: true` to validate the quality gate and build without publishing.
 
 ## License
 
 This project is licensed under the **GNU General Public License v3.0**.
 
-### What This Means
-
-- ✅ **Free to use** - Use commercially or personally
-- ✅ **Modify and distribute** - Make changes and share
-- ⚠️ **Share alike** - Derivative works must use GPL-3.0
-- ⚠️ **Disclose source** - Source code must be available
-- ⚠️ **Include license** - Copy of GPL-3.0 must be included
+- ✅ **Free to use** — commercially or personally
+- ✅ **Modify and distribute** — make changes and share
+- ⚠️ **Share alike** — derivative works must use GPL-3.0
+- ⚠️ **Disclose source** — source code must be available
 
 See the [LICENSE](LICENSE) file for the full license text.
-
-### Why GPL-3.0?
-
-We believe in open source software and want to ensure that improvements to this library remain open and available to everyone. The GPL-3.0 license guarantees that all derivatives and modifications stay free and open source.
 
 ---
 

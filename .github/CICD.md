@@ -7,7 +7,7 @@ This document describes the automated CI/CD pipelines for the sqlrepository proj
 The project uses GitHub Actions for continuous integration and deployment:
 
 - **CI Pipeline**: Runs on every push and pull request
-- **Release Pipeline**: Manual workflow to publish new versions
+- **Release Pipeline**: Triggers automatically on a `v*` tag push
 
 ## CI Pipeline (`ci.yml`)
 
@@ -42,39 +42,29 @@ Both jobs use `.github/actions/setup-env` — a composite action that installs u
 
 ## Release Pipeline (`release.yml`)
 
-**Trigger**: Manual `workflow_dispatch` from the GitHub Actions tab
+**Trigger**: Push of a `v*` tag (e.g. `v1.2.3`)
 
-**Inputs**:
-- `bump_type`: `patch` (default), `minor`, or `major`
-- `dry_run`: Boolean — skips commit, tag, release, and PyPI publish when true
+**Dry run**: Can also be triggered manually via `workflow_dispatch` with `dry_run: true` (default) to validate the quality gate and build without publishing.
 
 ### Jobs
 
-#### 1. bump-version
+#### 1. quality-gate
 
-- Runs `uv version --bump <type>` and `uv lock` to update `pyproject.toml` and `uv.lock`
-- Verifies the new tag does not already exist
-- Commits and pushes the version bump (skipped in dry-run mode)
-- Outputs: `version`, `tag`, `sha`
-
-#### 2. quality-gate
-
-- Checks out the bumped commit
+- Checks out the tagged commit
 - Runs ruff lint, ruff format check, pyright, and the full test suite
 
-#### 3. build
+#### 2. build
 
 - Builds wheel + sdist with `uv build`
 - Validates artifacts with `twine check dist/*`
 - Uploads artifacts for downstream jobs
 
-#### 4. create-release
+#### 3. create-release
 
-- Creates the annotated git tag and pushes it
 - Generates release notes with `git cliff --latest` (grouped by conventional commit type)
 - Creates the GitHub release with `gh release create`, attaching the built artifacts
 
-#### 5. publish-pypi
+#### 4. publish-pypi
 
 - Downloads the build artifacts
 - Publishes to PyPI via OIDC trusted publishing (no API token required)
@@ -82,7 +72,7 @@ Both jobs use `.github/actions/setup-env` — a composite action that installs u
 
 #### dry-run-summary
 
-Runs instead of `create-release` and `publish-pypi` when dry-run is enabled. Prints what would have been released.
+Runs instead of `create-release` and `publish-pypi` when triggered via `workflow_dispatch` with `dry_run: true`. Prints what would have been released.
 
 ---
 
@@ -109,18 +99,21 @@ Runs instead of `create-release` and `publish-pypi` when dry-run is enabled. Pri
 
 ### Triggering a Release
 
-1. Go to GitHub Actions tab
-2. Select the "Release" workflow
-3. Click "Run workflow"
-4. Choose the version bump type (`patch`, `minor`, or `major`)
-5. Optionally enable "Dry run" to validate the pipeline without publishing
-6. Click "Run workflow"
+Bump the version locally, then push a tag:
+
+```bash
+uv version --bump patch   # or: minor, major
+git add pyproject.toml uv.lock
+git commit -m "chore: bump version to X.Y.Z"
+git tag vX.Y.Z
+git push origin main vX.Y.Z
+```
 
 The workflow will automatically:
-- Bump the version in `pyproject.toml` and `uv.lock`
-- Run all quality checks
+- Run all quality checks on the tagged commit
 - Build and validate the package
-- Create the git tag and GitHub release with generated release notes
+- Generate release notes from conventional commits via `git-cliff`
+- Create the GitHub release with the built artifacts attached
 - Publish to PyPI
 
 ### Version Numbering
@@ -185,7 +178,7 @@ Then configure trusted publishing as described in the Prerequisites section abov
 | Scope | CI | Release |
 |-------|-----|---------|
 | `contents: read` | workflow default | workflow default |
-| `contents: write` | quality job: `security-events: write` | bump-version, create-release jobs |
+| `contents: write` | — | create-release job |
 | `id-token: write` | — | publish-pypi job only |
 | `security-events: write` | quality job (SARIF upload) | — |
 
@@ -193,9 +186,10 @@ Then configure trusted publishing as described in the Prerequisites section abov
 
 ## Troubleshooting
 
-### Release workflow fails at "Check tag availability"
+### Release workflow doesn't trigger after tag push
 
-The version in `pyproject.toml` has already been released. Run the workflow again — it will bump the version automatically.
+- Confirm the tag matches the `v*` pattern (e.g. `v1.2.3`, not `1.2.3`)
+- Verify the tag was pushed to the remote: `git push origin vX.Y.Z`
 
 ### PyPI publish fails with "403 Forbidden"
 
