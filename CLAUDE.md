@@ -2,7 +2,7 @@
 
 A Python repository pattern implementation for SQLAlchemy and SQLModel, inspired by Spring Data JPA repositories. Provides type-safe, zero-boilerplate CRUD operations with sync and async support.
 
-**Current version**: 0.2.0
+**Current version**: derived from git tags (see `git describe --tags`)
 **License**: GPL-3.0
 **Python**: >= 3.11
 
@@ -273,18 +273,14 @@ Includes everything: pytest, pytest-asyncio, pytest-cov, ruff, pyright, sqlmodel
 
 ### Release Process
 
-1. Bump version using uv:
-   ```bash
-   uv version --bump patch   # or minor, major
-   ```
-2. Commit and tag:
-   ```bash
-   git add pyproject.toml uv.lock
-   git commit -m "chore: bump version to X.Y.Z"
-   git tag vX.Y.Z
-   git push origin main vX.Y.Z
-   ```
-3. The `release.yml` workflow triggers automatically on the tag push and handles the GitHub release and PyPI publishing.
+The version is derived from the git tag at build time (`hatch-vcs`) — no version file to edit. Push a tag and the workflow handles the rest:
+
+```bash
+git tag vX.Y.Z
+git push origin vX.Y.Z
+```
+
+The `release.yml` workflow triggers automatically on the tag push and handles the GitHub release and PyPI publishing.
 
 > **Dry run**: Trigger `release.yml` manually via `workflow_dispatch` with `dry_run: true` to verify quality gate and build without publishing.
 

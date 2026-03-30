@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
 name = "sqlrepository"
-version = "0.2.1"
+dynamic = ["version"]
 description = "A Python repository pattern implementation for SQLAlchemy and SQLModel, inspired by Spring Data JPA repositories."
 
 authors = [
@@ -59,6 +59,9 @@ dev = [
     "aiosqlite>=0.20.0,<0.21.0",
     "greenlet>=3.2.0,<4.0.0",
 ]
+
+[tool.hatch.version]
+source = "vcs"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/sqlrepository"]

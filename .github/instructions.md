@@ -377,35 +377,19 @@ sqlrepository/
 
 ### Creating a Release
 
-**The project now uses automated CI/CD for releases!**
+The version is derived from the git tag at build time (`hatch-vcs`) — no version file to edit.
 
-1. **Update version**: Edit `pyproject.toml` (semantic versioning)
-   ```toml
-   [project]
-   version = "0.2.0"  # Update this
-   ```
-
-2. **Commit and push**:
+1. **Push a tag** from any commit on `main`:
    ```bash
-   git add pyproject.toml
-   git commit -m "chore: bump version to 0.2.0"
-   git push
+   git tag vX.Y.Z
+   git push origin vX.Y.Z
    ```
 
-3. **Trigger release workflow**:
-   - Go to GitHub Actions tab
-   - Select "Release" workflow
-   - Click "Run workflow"
-   - Choose branch (usually `main`)
-   - Click "Run workflow"
-
-4. **Automated steps** (no manual intervention):
-   - ✅ Extract version from pyproject.toml
-   - ✅ Run quality checks (lint, format, mypy, tests)
-   - ✅ Build package (wheel + sdist)
-   - ✅ Create git tag (e.g., `v0.2.0`)
-   - ✅ Create GitHub release with notes
-   - ✅ Publish to PyPI
+2. **Automated steps** (no manual intervention):
+   - ✅ Quality gate (lint, format, pyright, tests)
+   - ✅ Build package (wheel + sdist, version from tag)
+   - ✅ Create GitHub release with git-cliff release notes
+   - ✅ Publish to PyPI via trusted publishing
 
 See [`.github/CICD.md`](.github/CICD.md) for detailed CI/CD documentation.
 

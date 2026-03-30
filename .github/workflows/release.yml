@@ -1,18 +1,15 @@
 # This workflow automates the release process when a version tag is pushed.
 #
 # Flow:
-#   1. Developer bumps version locally and pushes a vX.Y.Z tag
+#   1. Developer pushes a vX.Y.Z tag — no version commit needed
 #   2. Quality gate runs on the tagged commit
-#   3. Build wheel + sdist
+#   3. Build wheel + sdist (version derived from tag via hatch-vcs)
 #   4. Create GitHub release with git-cliff release notes
 #   5. Publish to PyPI via trusted publishing
 #
 # Release steps:
-#   uv version --bump patch|minor|major
-#   git add pyproject.toml uv.lock
-#   git commit -m "chore: bump version to X.Y.Z"
 #   git tag vX.Y.Z
-#   git push origin main vX.Y.Z
+#   git push origin vX.Y.Z
 
 name: Release
 
@@ -163,8 +160,5 @@ jobs:
           echo "Checks passed and package built. Skipped: GitHub release and PyPI publish."
           echo ""
           echo "To release for real, push a version tag:"
-          echo "  uv version --bump patch|minor|major"
-          echo "  git add pyproject.toml uv.lock"
-          echo "  git commit -m 'chore: bump version to X.Y.Z'"
           echo "  git tag vX.Y.Z"
-          echo "  git push origin main vX.Y.Z"
+          echo "  git push origin vX.Y.Z"

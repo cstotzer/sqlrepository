@@ -957,7 +957,6 @@ wheels = [
 
 [[package]]
 name = "sqlrepository"
-version = "0.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "sqlalchemy" },
@@ -997,7 +996,7 @@ requires-dist = [
     { name = "sqlalchemy", specifier = ">=2.0.46,<3.0.0" },
     { name = "sqlmodel", marker = "extra == 'sqlmodel'", specifier = ">=0.0.34,<0.1.0" },
 ]
-provides-extras = ["sqlmodel", "async"]
+provides-extras = ["async", "sqlmodel"]
 
 [package.metadata.requires-dev]
 async = [{ name = "greenlet", specifier = ">=3.2.0,<4.0.0" }]
