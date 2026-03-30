@@ -99,19 +99,16 @@ Runs instead of `create-release` and `publish-pypi` when triggered via `workflow
 
 ### Triggering a Release
 
-Bump the version locally, then push a tag:
+Push a tag from any commit on `main`:
 
 ```bash
-uv version --bump patch   # or: minor, major
-git add pyproject.toml uv.lock
-git commit -m "chore: bump version to X.Y.Z"
 git tag vX.Y.Z
-git push origin main vX.Y.Z
+git push origin vX.Y.Z
 ```
 
-The workflow will automatically:
+The version is derived from the tag by `hatch-vcs` at build time — there is no version stored in `pyproject.toml`. The workflow will automatically:
 - Run all quality checks on the tagged commit
-- Build and validate the package
+- Build and validate the package (version resolved from the tag)
 - Generate release notes from conventional commits via `git-cliff`
 - Create the GitHub release with the built artifacts attached
 - Publish to PyPI
