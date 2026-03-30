@@ -298,12 +298,9 @@ uv run pyright src                # type check
 
 ### Release Process
 
-Bump the version locally, then push a tag — the release workflow triggers automatically:
+Push a tag — the version is derived from it at build time via `hatch-vcs`, and the release workflow triggers automatically:
 
 ```bash
-uv version --bump patch   # or: minor, major
-git add pyproject.toml uv.lock
-git commit -m "chore: bump version to X.Y.Z"
 git tag vX.Y.Z
 git push origin main vX.Y.Z
 ```
