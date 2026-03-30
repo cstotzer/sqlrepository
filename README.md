@@ -298,17 +298,14 @@ uv run pyright src                # type check
 
 ### Release Process
 
-Bump the version locally, then push a tag — the release workflow triggers automatically:
+Push a tag — the release workflow triggers automatically:
 
 ```bash
-uv version --bump patch   # or: minor, major
-git add pyproject.toml uv.lock
-git commit -m "chore: bump version to X.Y.Z"
 git tag vX.Y.Z
-git push origin main vX.Y.Z
+git push origin vX.Y.Z
 ```
 
-The workflow runs the quality gate, builds the package, publishes a GitHub release with generated release notes, and uploads to PyPI — all without further intervention.
+The version is derived from the tag at build time (no version stored in `pyproject.toml`). The workflow runs the quality gate, builds the package, publishes a GitHub release with generated release notes, and uploads to PyPI — all without further intervention.
 
 > **Dry run**: trigger `release.yml` manually via `workflow_dispatch` with `dry_run: true` to validate the quality gate and build without publishing.
 
