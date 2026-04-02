@@ -1,12 +1,14 @@
 """Provides tests for special cases of the SQLAlchemy repository."""
 
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
 from unittest.mock import patch
 
 import pytest
+import pytest_asyncio
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlmodel import Field, Session, SQLModel, create_engine
 
-from sqlrepository.sqlmodel import Repository
+from sqlrepository.sqlmodel import AsyncRepository, Repository
 from tests.sqlmodel.models import Album, Artist
 from tests.sqlmodel.repositories import ArtistRepository
 
@@ -57,6 +59,19 @@ def artist_session(
     session.close()
 
 
+@pytest_asyncio.fixture
+async def async_composite_session() -> AsyncGenerator[AsyncSession, None]:
+    """Async session fixture with CompositeEntity data."""
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
+    async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
+    async with AsyncSession(engine, expire_on_commit=False) as session:
+        session.add(CompositeEntity(id1=1, id2=2, name="Test Entity"))
+        await session.commit()
+        yield session
+    await engine.dispose()
+
+
 def test_exists_by_id_does_not_load_entity(
     artist_session: Session,
 ) -> None:
@@ -87,6 +102,33 @@ def test_delete_by_id_composite_pk(session: Session) -> None:
     repo.delete_by_id((1, 2))
     session.commit()
     assert repo.find_by_id((1, 2)) is None
+
+
+@pytest.mark.asyncio
+async def test_exists_by_id_composite_pk_async(
+    async_composite_session: AsyncSession,
+) -> None:
+    """exists_by_id async handles the composite-PK path correctly."""
+
+    class CompositeAsyncRepo(AsyncRepository[CompositeEntity, tuple]): ...
+
+    repo = CompositeAsyncRepo(async_composite_session)
+    assert await repo.exists_by_id((1, 2)) is True
+    assert await repo.exists_by_id((9, 9)) is False
+
+
+@pytest.mark.asyncio
+async def test_delete_by_id_composite_pk_async(
+    async_composite_session: AsyncSession,
+) -> None:
+    """delete_by_id async handles the composite-PK path correctly."""
+
+    class CompositeAsyncRepo(AsyncRepository[CompositeEntity, tuple]): ...
+
+    repo = CompositeAsyncRepo(async_composite_session)
+    await repo.delete_by_id((1, 2))
+    await async_composite_session.commit()
+    assert await repo.find_by_id((1, 2)) is None
 
 
 def test_composite_primary_key(session: Session) -> None:

@@ -38,6 +38,15 @@ async def test_find_all(
 
 
 @pytest.mark.asyncio
+async def test_find_all_ordered(
+    async_artist_repository: AsyncArtistRepository,
+) -> None:
+    artists = await async_artist_repository.find_all(order_by=Artist.name)
+    assert artists[0].name == "Amy Winehouse"
+    assert artists[-1].name == "The Weeknd"
+
+
+@pytest.mark.asyncio
 async def test_find_by_id(
     async_artist_repository: AsyncArtistRepository,
 ) -> None:

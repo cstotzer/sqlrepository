@@ -17,6 +17,12 @@ def test_find_all(artist_repository: ArtistRepository) -> None:
     assert len(artist_repository.find_all()) == 6
 
 
+def test_find_all_ordered(artist_repository: ArtistRepository) -> None:
+    artists = artist_repository.find_all(order_by=Artist.name)
+    assert artists[0].name == "Amy Winehouse"
+    assert artists[-1].name == "The Weeknd"
+
+
 def test_find_by_id(artist_repository: ArtistRepository) -> None:
     artist = artist_repository.find_by_id(1)
     assert artist is not None
