@@ -158,6 +158,10 @@ Async versions of all methods are `async def` and must be `await`ed.
 1. **All imports at the top of the file** — never use inline imports inside functions or methods.
 2. **Always run `ruff format` on changed Python files before linting** — the correct sequence is `ruff format` → `ruff check --fix` → `ruff check` → `pyright`.
 3. **Never manually reorder or reformat import blocks** — `ruff format` and `ruff check --fix` handle all import formatting and sorting; do not touch import order by hand.
+4. **Maintain (SQLAlchemy, SQLModel) × (sync, async) equivalency at all times** — this is a top project priority:
+   - Every public method added to `BaseRepository` (`core.py`) must have an identical async counterpart in `BaseAsyncRepository` (`asyncio.py`), with the same signature and docstring.
+   - Every test added to `tests/sqlalchemy/` must have a counterpart in `tests/sqlmodel/` and vice-versa.
+   - Run the equivalency check script (see `/implement-milestone` QA step) before every commit that touches source or tests.
 
 ### Naming
 
