@@ -261,7 +261,6 @@ Includes everything: pytest, pytest-asyncio, pytest-cov, ruff, pyright, sqlmodel
 
 ### Constraint Notes
 
-- **pytest < 9** is required because `pytest-asyncio 0.26.x` does not support pytest 9 yet.
 - `aiosqlite` is a dev-only dependency (async SQLite driver used in tests).
 - Use `pytest-cov` (not `pytest-coverage` — different package) for the `--cov` flags.
 

@@ -47,9 +47,9 @@ async = [
     "greenlet>=3.2.0,<4.0.0",
 ]
 dev = [
-    "pytest>=8.2.0,<9.0.0",
+    "pytest>=9.0.0,<10.0.0",
     "pytest-cov>=6.0.0,<7.0.0",
-    "pytest-asyncio>=0.26.0,<0.27.0",
+    "pytest-asyncio>=0.26.0,<2.0.0",
     "ruff>=0.15.1,<0.16.0",
     "pyright>=1.1",
     "twine>=6.0.0,<7.0.0",
