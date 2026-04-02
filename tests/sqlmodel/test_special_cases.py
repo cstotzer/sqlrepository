@@ -68,6 +68,16 @@ def test_exists_by_id_does_not_load_entity(
         mock_get.assert_not_called()
 
 
+def test_exists_by_id_composite_pk(session: Session) -> None:
+    """exists_by_id handles the composite-PK path correctly."""
+
+    class CompositeRepo(Repository[CompositeEntity, tuple]): ...
+
+    repo = CompositeRepo(session)
+    assert repo.exists_by_id((1, 2)) is True
+    assert repo.exists_by_id((9, 9)) is False
+
+
 def test_composite_primary_key(session: Session) -> None:
     """Test that repositories can handle composite primary keys.
 
