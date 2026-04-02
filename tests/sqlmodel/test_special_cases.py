@@ -1,11 +1,14 @@
 """Provides tests for special cases of the SQLAlchemy repository."""
 
 from collections.abc import Generator
+from unittest.mock import patch
 
 import pytest
 from sqlmodel import Field, Session, SQLModel, create_engine
 
 from sqlrepository.sqlmodel import Repository
+from tests.sqlmodel.models import Album, Artist
+from tests.sqlmodel.repositories import ArtistRepository
 
 
 class CompositeEntity(SQLModel, table=True):
@@ -35,6 +38,34 @@ def session(
         yield session
 
     session.close()
+
+
+@pytest.fixture
+def artist_session(
+    test_data: tuple[list[dict], list[dict]],
+) -> Generator[Session, None, None]:
+    """Session fixture with Artist/Album data for identity-map tests."""
+    engine = create_engine("sqlite:///:memory:", echo=False)
+    SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        for artist_data in test_data[0]:
+            session.add(Artist(**artist_data))
+        for album_data in test_data[1]:
+            session.add(Album(**album_data))
+        session.commit()
+        yield session
+    session.close()
+
+
+def test_exists_by_id_does_not_load_entity(
+    artist_session: Session,
+) -> None:
+    """exists_by_id must not call session.get() (no full entity load)."""
+    repo = ArtistRepository(artist_session)
+    with patch.object(artist_session, "get") as mock_get:
+        result = repo.exists_by_id(1)
+        assert result is True
+        mock_get.assert_not_called()
 
 
 def test_composite_primary_key(session: Session) -> None:

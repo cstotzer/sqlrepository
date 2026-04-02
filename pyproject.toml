@@ -98,7 +98,6 @@ ignore = [
 fixable = ["ALL"]
 unfixable = [
     "D", # Dont fix docstyle from others
-    "I", # we run isort separately
 ]
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"

@@ -125,7 +125,7 @@ All repository classes expose the same interface:
 | `find_by_id(id)` | Return entity or `None` |
 | `find_all()` | Return all entities |
 | `find_all_by_id(ids)` | Return entities matching any of the given IDs |
-| `exists_by_id(id)` | Return `bool` |
+| `exists_by_id(id)` | Return `bool` (issues `SELECT 1 LIMIT 1`; never loads the entity) |
 | `count()` | Return total row count |
 | `delete(entity)` | Remove a specific entity |
 | `delete_by_id(id)` | Remove by primary key |
