@@ -153,6 +153,12 @@ Async versions of all methods are `async def` and must be `await`ed.
 - **Docstring style**: Google style — required on all public methods and classes
 - **Type hints**: Required on all public method signatures
 
+### Hard Rules for AI Assistants
+
+1. **All imports at the top of the file** — never use inline imports inside functions or methods.
+2. **Always run `ruff format` on changed Python files before linting** — the correct sequence is `ruff format` → `ruff check --fix` → `ruff check` → `pyright`.
+3. **Never manually reorder or reformat import blocks** — `ruff format` and `ruff check --fix` handle all import formatting and sorting; do not touch import order by hand.
+
 ### Naming
 
 - **Classes**: PascalCase — `ArtistRepository`, `AsyncRepository`
@@ -292,7 +298,7 @@ See `.github/CICD.md` for full details.
 - Trivy scans for CRITICAL/HIGH vulnerabilities and uploads results to the GitHub Security tab as SARIF.
 - Dependabot keeps GitHub Actions SHA pins current (weekly).
 - `update-deps.yml` keeps Python dependencies current via weekly `uv lock --upgrade` PRs.
-- Coverage must meet an 80% threshold (`--cov-fail-under=80`) or CI fails.
+- Coverage must meet a 100% threshold (`--cov-fail-under=100`) or CI fails.
 
 ### Commit Prefixes (Conventional Commits)
 
