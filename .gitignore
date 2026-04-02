@@ -206,3 +206,9 @@ __marimo__/
 
 # Claude Code
 .claude/settings.local.json
+.claude/commands/implement-milestone.md
+
+# Planning artefacts (AI-assisted, not part of the codebase)
+analysis.md
+roadmap.md
+plans/
