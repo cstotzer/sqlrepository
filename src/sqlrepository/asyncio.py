@@ -13,7 +13,17 @@ from typing import (
     get_origin,
 )
 
-from sqlalchemy import ColumnExpressionArgument, delete, func, select
+from sqlalchemy import (
+    ColumnExpressionArgument,
+    and_,
+    delete,
+    func,
+    literal,
+    select,
+)
+from sqlalchemy import (
+    inspect as sa_inspect,
+)
 from sqlalchemy.orm import DeclarativeBase
 
 if TYPE_CHECKING:
@@ -140,6 +150,10 @@ class BaseAsyncRepository(Generic[EntityType, IdType]):
     ) -> bool:
         """Returns whether an entity with the given id exists.
 
+        Issues a lightweight ``SELECT 1 ... LIMIT 1`` rather than loading
+        the full entity, so the result is never placed in the session
+        identity map.
+
         Args:
             _id (IdType): The identifier to check. Must not be None.
 
@@ -152,7 +166,23 @@ class BaseAsyncRepository(Generic[EntityType, IdType]):
         """
         if _id is None:
             raise ValueError("_id must not be None")
-        return await self.find_by_id(_id) is not None
+        mapper = sa_inspect(self._model_type())
+        pk_cols = mapper.primary_key
+        if len(pk_cols) == 1:
+            condition = pk_cols[0] == _id
+        else:
+            condition = and_(
+                *(
+                    col == val
+                    for col, val in zip(
+                        pk_cols,
+                        _id,  # type: ignore[arg-type]
+                        strict=False,
+                    )
+                )
+            )
+        stmt = select(literal(1)).where(condition).limit(1)
+        return await self.session.scalar(stmt) is not None
 
     async def find_all_by_id(
         self, ids: Iterable[IdType]

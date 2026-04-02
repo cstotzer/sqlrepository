@@ -1,5 +1,7 @@
 """Tests for asynchronous AsyncRepository with SQLAlchemy models."""
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,6 +9,20 @@ from tests.sqlalchemy.models import Artist, Genre
 from tests.sqlalchemy.repositories import (
     AsyncArtistRepository,
 )
+
+
+@pytest.mark.asyncio
+async def test_exists_by_id_does_not_load_entity(
+    async_artist_repository: AsyncArtistRepository,
+    async_session: AsyncSession,
+) -> None:
+    """exists_by_id must not load the entity into the session identity map."""
+    with patch.object(
+        async_session, "get", new_callable=AsyncMock
+    ) as mock_get:
+        result = await async_artist_repository.exists_by_id(1)
+        assert result is True
+        mock_get.assert_not_called()
 
 
 @pytest.mark.asyncio
