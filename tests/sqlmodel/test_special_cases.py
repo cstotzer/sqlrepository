@@ -78,6 +78,17 @@ def test_exists_by_id_composite_pk(session: Session) -> None:
     assert repo.exists_by_id((9, 9)) is False
 
 
+def test_delete_by_id_composite_pk(session: Session) -> None:
+    """delete_by_id handles the composite-PK path correctly."""
+
+    class CompositeRepo(Repository[CompositeEntity, tuple]): ...
+
+    repo = CompositeRepo(session)
+    repo.delete_by_id((1, 2))
+    session.commit()
+    assert repo.find_by_id((1, 2)) is None
+
+
 def test_composite_primary_key(session: Session) -> None:
     """Test that repositories can handle composite primary keys.
 

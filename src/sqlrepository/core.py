@@ -211,18 +211,44 @@ class BaseRepository(Generic[EntityType, IdType]):
     def delete_by_id(self, _id: IdType) -> None:
         """Deletes the entity with the given id.
 
+        Issues a single ``DELETE FROM <table> WHERE <pk> = :id`` statement
+        via SQLAlchemy Core, avoiding a prior ``SELECT`` round-trip.
+
+        Note:
+            This bypasses ORM-level mapper events (``before_delete``,
+            ``after_delete``) and Python-side cascades. Users who rely on
+            these must override this method in their subclass and call
+            ``session.delete(entity)`` directly.
+
         Args:
-            _id (IdType): The identifier of the entity to delete. Must not be
-                None.
+            _id (IdType): The identifier of the entity to delete.
+                Must not be None.
 
         Raises:
             ValueError: If _id is None.
         """
         if _id is None:
             raise ValueError("_id must not be None")
-        entity = self.find_by_id(_id)
-        if entity is not None:
-            self.session.delete(entity)
+        mapper = sa_inspect(self._model_type())
+        pk_cols = mapper.primary_key
+        if len(pk_cols) == 1:
+            condition = pk_cols[0] == _id
+        else:
+            condition = and_(
+                *(
+                    col == val
+                    for col, val in zip(
+                        pk_cols,
+                        _id,  # type: ignore[arg-type]
+                        strict=False,
+                    )
+                )
+            )
+        stmt = delete(self._model_type()).where(condition)
+        self.session.execute(
+            stmt,
+            execution_options={"synchronize_session": "fetch"},
+        )
 
     def delete(self, entity: EntityType) -> None:
         """Deletes a given entity from the database.
