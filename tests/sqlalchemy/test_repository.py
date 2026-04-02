@@ -1,5 +1,7 @@
 """Tests for synchronous Repository with SQLAlchemy models."""
 
+from unittest.mock import patch
+
 import pytest
 from sqlalchemy.orm import Session
 
@@ -135,6 +137,16 @@ def test_delete_by_id_not_found(
 def test_delete_by_id_none_raises(artist_repository: ArtistRepository) -> None:
     with pytest.raises(ValueError, match="_id must not be None"):
         artist_repository.delete_by_id(None)  # type: ignore[arg-type]
+
+
+def test_delete_by_id_does_not_load_entity(
+    artist_repository: ArtistRepository,
+    session: Session,
+) -> None:
+    """delete_by_id must not call session.get() (no full entity load)."""
+    with patch.object(session, "get") as mock_get:
+        artist_repository.delete_by_id(1)
+        mock_get.assert_not_called()
 
 
 def test_delete_all_by_id(

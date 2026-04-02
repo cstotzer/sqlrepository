@@ -227,10 +227,10 @@ All repository classes expose the same interface out of the box. Async variants 
 | `find_by_id(id)` | `EntityType \| None` | |
 | `find_all(order_by=None)` | `Sequence[EntityType]` | Optionally pass a column expression to order results |
 | `find_all_by_id(ids)` | `Sequence[EntityType]` | Efficient batch lookup for a known set of IDs |
-| `exists_by_id(id)` | `bool` | |
+| `exists_by_id(id)` | `bool` | Issues `SELECT 1 LIMIT 1`; never loads the entity |
 | `count()` | `int` | |
 | `delete(entity)` | `None` | |
-| `delete_by_id(id)` | `None` | |
+| `delete_by_id(id)` | `None` | Issues a single `DELETE` statement; bypasses ORM mapper events — override in your subclass if you need `before_delete`/`after_delete` hooks or Python-side cascades |
 | `delete_all(entities=None)` | `None` | Pass `None` to delete **all rows** in the table |
 | `delete_all_by_id(ids)` | `None` | |
 

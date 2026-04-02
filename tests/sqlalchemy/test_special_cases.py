@@ -113,6 +113,31 @@ async def test_exists_by_id_composite_pk_async(
     assert await repo.exists_by_id((9, 9)) is False
 
 
+def test_delete_by_id_composite_pk(session: Session) -> None:
+    """delete_by_id handles the composite-PK path correctly."""
+
+    class CompositeRepo(Repository[CompositeEntity, tuple]): ...
+
+    repo = CompositeRepo(session)
+    repo.delete_by_id((1, 2))
+    session.commit()
+    assert repo.find_by_id((1, 2)) is None
+
+
+@pytest.mark.asyncio
+async def test_delete_by_id_composite_pk_async(
+    async_composite_session: AsyncSession,
+) -> None:
+    """delete_by_id async handles the composite-PK path correctly."""
+
+    class CompositeAsyncRepo(AsyncRepository[CompositeEntity, tuple]): ...
+
+    repo = CompositeAsyncRepo(async_composite_session)
+    await repo.delete_by_id((1, 2))
+    await async_composite_session.commit()
+    assert await repo.find_by_id((1, 2)) is None
+
+
 def test_composite_primary_key(session: Session) -> None:
     """Test that repositories can handle composite primary keys.
 

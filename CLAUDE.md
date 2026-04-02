@@ -128,7 +128,7 @@ All repository classes expose the same interface:
 | `exists_by_id(id)` | Return `bool` (issues `SELECT 1 LIMIT 1`; never loads the entity) |
 | `count()` | Return total row count |
 | `delete(entity)` | Remove a specific entity |
-| `delete_by_id(id)` | Remove by primary key |
+| `delete_by_id(id)` | Remove by primary key (single `DELETE` statement; bypasses ORM mapper events — override in subclass if you need `before_delete`/`after_delete` hooks or Python-side cascades) |
 | `delete_all(entities)` | Remove a collection |
 | `delete_all_by_id(ids)` | Remove by list of IDs |
 

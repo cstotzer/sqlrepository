@@ -203,6 +203,19 @@ async def test_delete_by_id_none_raises(
 
 
 @pytest.mark.asyncio
+async def test_delete_by_id_does_not_load_entity(
+    async_artist_repository: AsyncArtistRepository,
+    async_session: AsyncSession,
+) -> None:
+    """delete_by_id must not call session.get() (no full entity load)."""
+    with patch.object(
+        async_session, "get", new_callable=AsyncMock
+    ) as mock_get:
+        await async_artist_repository.delete_by_id(1)
+        mock_get.assert_not_called()
+
+
+@pytest.mark.asyncio
 async def test_delete_all_by_id(
     async_artist_repository: AsyncArtistRepository, async_session: AsyncSession
 ) -> None:
