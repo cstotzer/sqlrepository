@@ -126,10 +126,10 @@ include = ["src"]
 venvPath = "."
 venv = ".venv"
 
-[tool.pytest]
+[tool.pytest.ini_options]
 pythonpath = ["src"]
 minversion = "8.0"
-addopts = ["-ra", "-q"]
+addopts = ["-ra", "-q", "--cov-fail-under=100"]
 testpaths = [
     "tests",
     "integration",
