@@ -3,7 +3,7 @@
 A Python repository pattern implementation for SQLAlchemy and SQLModel, inspired by Spring Data JPA repositories. Provides type-safe, zero-boilerplate CRUD operations with sync and async support.
 
 **Current version**: derived from git tags (see `git describe --tags`)
-**License**: GPL-3.0
+**License**: MIT
 **Python**: >= 3.11
 
 ---
