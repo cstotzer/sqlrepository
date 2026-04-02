@@ -352,7 +352,7 @@ sqlrepository/
 ├── pyproject.toml                   # uv configuration, dependencies
 ├── uv.lock                          # Locked dependencies
 ├── README.md                        # User-facing documentation
-└── LICENSE                          # GPL-3.0 license
+└── LICENSE                          # MIT license
 ```
 
 ## Common Tasks
@@ -443,7 +443,7 @@ Without this, accessing entity attributes after commit triggers lazy loads that 
 
 ## License
 
-GPL-3.0 - See LICENSE file for details.
+MIT - See LICENSE file for details.
 
 ## Contributing
 

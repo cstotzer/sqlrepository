@@ -311,12 +311,11 @@ The workflow runs the quality gate, builds the package, publishes a GitHub relea
 
 ## License
 
-This project is licensed under the **GNU General Public License v3.0**.
+This project is licensed under the **MIT License**.
 
 - ✅ **Free to use** — commercially or personally
 - ✅ **Modify and distribute** — make changes and share
-- ⚠️ **Share alike** — derivative works must use GPL-3.0
-- ⚠️ **Disclose source** — source code must be available
+- ✅ **No share-alike requirement** — use in proprietary projects
 
 See the [LICENSE](LICENSE) file for the full license text.
 
